@@ -1,5 +1,7 @@
 const net = require('net');
 const parser = require('./parser');
+const images = require('images');
+const render = require('./render')
 
 class Request {
     constructor(options) {
@@ -37,7 +39,6 @@ class Request {
             }
 
             connection.on('data', (data) => {
-                console.log(data.toString(), '?data?');
                 parser.receive(data.toString())
                 if (parser.isFinished) {
                     resolve(parser.response);
@@ -206,7 +207,9 @@ void async function () {
     });
 
     const res = await request.send()
-    console.log(res, '????')
     const dom = parser.parseHTML(res.body)
-    console.log(dom, '[dom]')
+    const viewPort = images(800, 800);
+    // console.log(JSON.stringify(dom, null, '  '))
+    render(viewPort, dom);
+    viewPort.save('viewProt.jpg')
 }()

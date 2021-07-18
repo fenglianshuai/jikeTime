@@ -14,37 +14,31 @@ http.createServer((req, res) => {
         <html maaaa=a>
         <head>
             <style>
-                body div #box {
-                    width: 100px;
+                #box {
+                    width: 500px;
                     height: 100px;
-                    background: red;
-                }
-                body div #box {
-                    width: 1000px;
-                    height: 100px;
-                    background: pind;
                     display: flex;
                     flex-wrap: wrap;
+                    background-color:rgb(255,255,255);
                 }
-                body div #box div {
+                #box div {
                     width: 100px;
                     height: 100px;
+                    background-color: rgb(0,0,255);
+                }
+                #box #one {
+                    background-color: rgb(255,0,0);
+                }
+                #box .c1 {
+                    background-color: rgb(0,123,255);
                 }
             </style>
             <title>Document</title>
         </head>
         <body>
-            <div>
-                <div id="box">
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                    <div></div>
-                </div>
+            <div id="box">
+                <div id="one"></div>
+                <div class="c1"></div>
             </div>
         </body>
         </html>`)

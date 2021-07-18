@@ -133,7 +133,7 @@ function emit(token) {
         computeCSS(element);
 
         top.children.push(element); // 设置子元素
-        element.parent = top; // 设置父元素currentTextNode
+        // element.parent = top; // 设置父元素currentTextNode 此属性加上会造成循环引用
 
         if (!token.isSelfClosing) {
             stack.push(element)
