@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <!-- 
+        输入元素           空白符           换行符        注释    有效的字符
+        InputElement ::= WhiteSpace | LineTerminator | Comment | Token
+        WhiteSpace ::= " " | ＂ ＂
+        LineTerminator ::= "\n" | "\r"
+                        单行注释            多行注释
+        Comment ::= SingleLineComment | MultilineComment
+        SingleLineComment ::= "/" "/" <any>*
+        MultilineComment ::=  "/" "*" ([^*] | "*" [^/])* "*" "/"
+                   直接量     关键字       标识符      各种符号
+        Token ::= Literal | Keywords | Identifier | Punctuator
+        Literal ::= NumberLiteral | BooleanLiteral | StringLiteral | NullLiteral
+        Keywords ::= "if" | "else" | "for" | "function" ....
+        Punctuator ::= "+" | "-" | "*" | "/" | "{" | "}" | ....
+        
+          结构
+        Program ::= Statement+
+                        表达式                              循环语句        循环语句            变量声明            函数声明
+        Statement ::= ExpressionStatement | IfStatement | ForStatement | WhileStatement | VariableDeclaration | FunctionDeclaration | ClassDeclaration | BreakStatement | ContinueStatement | ReturnStatement | ThrowStatement | TryStatement | Block
+        
+        IfStatement ::= "if" "(" Expression ")" Statement
+        
+        Block ::= "{" Statement "}"
+
+        TryStatement  ::= "try" "{" Statement+ "}" "catch" "(" Expression ")" "{" Statement+ "}"
+
+        ExpressionStatement ::= Expression ";"
+        
+        Expression ::= AdditiveExpression
+
+        AdditiveExpression ::= MultiplicativeExpression | AdditiveExpression ("+" | "-") MultiplicativeExpression
+        
+        MultiplicativeExpression ::= UnaryExpression | MultiplicativeExpression ("*" | "/") UnaryExpression
+
+        UnaryExpression ::= PrimaryExpression | ("+" | "-" | "typeof") PrimaryExpression
+
+        PrimaryExpression ::= "(" Expression ")" | Literal | Identifier
+        
+    -->
+    <pre>
+    <script>
+        /*
+            第一版
+        */
+        function scan(str) {
+            let regexp = / |\n|\/\*([^*]|\*[^\/])*\*\/|\/\/[^\n]*|[1-9][0-9]*|0/g;
+            while (regexp.lastIndex < str.length) {
+                let r = regexp.exec(str);
+                console.log(JSON.stringify(r[0]))
+            }
+        }
+        scan(`
+            13
+            5
+            7
+            12200
+            0
+            //hello world
+            /*hello world*/
+            /*fengls*/
+        `)
+
+        /*
+            进阶版
+        */
+        let xregexp = {
+            InputElement: "<Whitespace>|<LineTerminator>|<Comments>|<Token>",
+            Whitespace: / /,
+            LineTerminator: /\n/,
+            Comments: /\/\*(?:[^*]|\*[^\/])*\*\/|\/\/[^\n]*/,
+            Token: "<Literal>|<Keywords>|<Identifer>|<Punctuator>",
+            Literal: "<NumericLiteral>|<BooleanLiteral>|<StringLiteral>|<NullLiteral>",
+            NumericLiteral: /(?:[1-9][0-9]*|0)(?:\.[0-9]*)?|\.[0-9]+/,
+            BooleanLiteral: /true|false/,
+            StringLiteral: /\"(?:[^"\n]|\\[\s\S])*\"|\'(?:[^'\n]|\\[\s\S])*\'/,
+            NullLiteral: /null/,
+            Identifer: /[a-zA-Z_$][a-zA-Z0-9_$]*/,
+            Keywords: /if|else|for|function|let/,
+            Punctuator: /\+|\,|\?|\:|\{|\}|\.|\(|\=|\<|\+\+|\=\=|\=\>|\*|\)|\[|\]|;/
+
+        }
+
+        function compileRegExp(xregexp, name) {
+            if (xregexp[name] instanceof RegExp) {
+                return xregexp[name].source;
+            } else {
+                console.log(xregexp[name])
+                let regexp = xregexp[name].replace(/\<([^>]+)\>/g, (str, $1) => {
+                    return compileRegExp(xregexp, $1)
+                })
+                return regexp
+            }
+        }
+        const reg = compileRegExp(xregexp, "InputElement");
+
+        function scan2(str) {
+            let regexp = new RegExp(reg, 'g');
+            while (regexp.lastIndex < str.length) {
+                let r = regexp.exec(str);
+                console.log(JSON.stringify(r[0]))
+                document.write(r[0])
+                if (!r[0].length) {
+                    break;
+                }
+            }
+        }
+        scan2(`
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    let cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.innerText = pattern[i * 3 + j] == 2 ? "×" : pattern[I * 3 + j] == 1 ? "⚪" : '';
+                    cell.addEventListener('click', () => userMove(j, i));
+                    board.appendChild(cell)
+                }
+                board.appendChild(document.createElement('br'))
+            }
+        `)
+
+        /*
+            编译分组版
+        */
+        class XRegExp {
+            constructor(source, flag, root="root") {
+                this.table = new Map();
+                this.regexp = new RegExp(this.compileRegExp(source, root, 0).source, flag);
+            }
+            compileRegExp(source, name, start) {
+                if (source[name] instanceof RegExp) {
+                    return {
+                        source:source[name].source,
+                        length: 0
+                    };
+                } else {
+                    console.log(source[name])
+                    let length = 0;
+                    let regexp = source[name].replace(/\<([^>]+)\>/g, (str, $1) => {
+                        this.table.set(start + length, $1);
+                        // this.table.set($1, start + length);
+                        ++length;
+                        let r = this.compileRegExp(source, $1, start + length);
+                        length += r.length;
+                        return `(${r.source})`;
+                    })
+                    return {
+                        source: regexp,
+                        length   
+                    }
+                }
+            }
+            exec(string) {
+                let r = this.regexp.exec(string);
+                for(let i = 1; i < r.length; i++) {
+                    if(r[i] !== void 0) {
+                        r[this.table.get(i - 1)] = r[i]
+                    }
+                }
+                return r
+            }
+            get lastIndex() {
+               return this.regexp.lastIndex
+            }
+            set lastIndex(value) {
+                return this.regexp.lastIndex = value;
+            }
+        }
+        function scan3(str) {
+            let regexp = new XRegExp(xregexp, 'g', 'InputElement');
+            while (regexp.lastIndex < str.length) {
+                let r = regexp.exec(str);
+                console.log(r)
+                // document.write(r)
+                if (!r[0].length) {
+                    break;
+                }
+            }
+        }
+        scan3(`
+    for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+            let cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.innerText = pattern[i * 3 + j] == 2 ? "×" : pattern[I * 3 + j] == 1 ? "⚪" : '';
+            cell.addEventListener('click', () => userMove(j, i));
+            board.appendChild(cell)
+        }
+        board.appendChild(document.createElement('br'))
+    }
+`)
+    </script>
+    </pre>
+</body>
+
+</html>
